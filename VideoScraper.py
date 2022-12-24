@@ -33,13 +33,34 @@ def GetAllVideoLinksChannel(channel_id):
             break
     return video_links
 
+
+
 def GetDescription(url):
     soup = BeautifulSoup(requests.get(url).content,"lxml")
     pattern = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
     description = pattern.findall(str(soup))[0].replace('\\n','\n')
-    print(description)
+    # print(description)
     return description
 
+
+def ParseVideoDescription(description):
+
+    # split strings by enter
+    splitLines = description.split("\n")
+    for line in splitLines:
+        # get timestamp and comment
+        try:
+            firstStr = re.match(r'(?P<time>[[\d{2}]?:?\d{2}:\d{2})( )(?P<comment>[\s\S]+)',line)
+            timeStamp = firstStr.group("time")
+            print(timeStamp)
+            comment = firstStr.group("comment")
+            print(comment)
+        except:
+            print("%s not valid line"%line)
+
+
+        
+    # print(splitLines)
 
 
 def main():
@@ -48,12 +69,17 @@ def main():
 
     for count, vid in enumerate(currentVideos):
         print("Current vid %i"%(count))
-        test = GetDescription(vid)
-        print(test)
+        thisDescription = GetDescription(vid)
+        ParseVideoDescription(thisDescription)
+        # print(test)
 
     # splitLines = test.split("\n")
     # print(splitLines)
 
 
 if __name__ == '__main__':
+
+    stringTest = "1:00:50 lol eddie !!!!"
+    
+    # print(z.groups)
     main()
