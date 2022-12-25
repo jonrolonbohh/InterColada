@@ -37,17 +37,18 @@ def GetAllVideoLinksChannel(channel_id):
 
 def GetDescriptionAndTitle(url):
     
-    numTries = 50
+    numTries = 25
     # keepPulling = True
     it = 0
+    description = ""
+    title = ""
     soup = BeautifulSoup(requests.get(url).content,"lxml")
     titleSearch = soup.find_all("title")
     title = titleSearch[0].get_text('\n')
-    description = ""
+ 
     if "compilation" in title.lower():
         print("found a non game video: %s"%title.lower)
         title = ""
-        description = ""
         return title, description
 
     while it < numTries:
@@ -57,11 +58,12 @@ def GetDescriptionAndTitle(url):
             description = pattern.findall(str(soup))[0].replace('\\n','\n')
             
         except(IndexError):
-            print("Failed attempt on %i"% it)
+            print("IndexError attempt on %i"% it)
             continue
             # it+=1
         if description:
             break
+        print("EmptyDescription on attempt %i"%it)
 
     if not description:
         title = ""
@@ -73,11 +75,6 @@ def GetDescriptionAndTitle(url):
     # print(description)
     return description, title
 
-def GetTitle(url):
-    soup = BeautifulSoup(requests.get(url).content,"lxml")
-    t = soup.find_all("title")
-    for title in soup.find_all("title"):
-        print(title.get_text('\n'))
 
 
 def GetGoals(description, title):
@@ -86,9 +83,11 @@ def GetGoals(description, title):
 
     titles = list()
     timeStamps = list()
+    elapsedTime = list()
     goalScorers = list()
     primaryAssists = list()
     highlightGoals = list()
+    
 
     for line in splitLines:
         highlightGoal = False
@@ -153,32 +152,42 @@ def GetGoals(description, title):
 
         titles.append(title)
         timeStamps.append(timeStamp)
+        elapsedTime.append(calcElapsedTime(timeStamp))
         goalScorers.append(goalScorer)
         primaryAssists.append(primaryAssist)
         highlightGoals.append(highlightGoal)
 
-    return titles, timeStamps, goalScorers, primaryAssists, highlightGoals
+    return titles, timeStamps,elapsedTime, goalScorers, primaryAssists, highlightGoals
 
 
 
     
-
-
-
-
+def calcElapsedTime(timeStampString):
+    # Calculate Elapsed time for stamina stats
+    time = timeStampString.split(":")
+    if len(time) == 3:
+        hours = float(time[0])
+        minutes = float(time[1])
+        seconds = float(time[2])
+    else:
+        hours = float(0)
+        minutes = float(time[0])
+        seconds = float(time[1])
         
+    elapsedTimeMins = hours*60 + minutes + seconds/60 
+    return elapsedTimeMins   
     # print(splitLines)
 
 
 def main():
 
     currentVideos = GetAllVideoLinksChannel("UCkZJ6nMg5apbOXfBNq_lFJw")
-    allTitles = list()
-    allTimeStamps = list()
-    allGoalScorers = list()
-    allPrimaryAssists = list()
-    allHighlightGoals = list()
-    header = ['Vid', 'timeStamp', 'goalScorer', 'primaryAssist', 'highlightGoal']
+    # allTitles = list()
+    # allTimeStamps = list()
+    # allGoalScorers = list()
+    # allPrimaryAssists = list()
+    # allHighlightGoals = list()
+    header = ['Vid', 'timeStamp','elapsedTime', 'goalScorer', 'primaryAssist', 'highlightGoal']
     with open('goals.csv', 'w', encoding='UTF8', newline='') as f:
          writer = csv.writer(f)
          writer.writerow(header)
@@ -190,18 +199,18 @@ def main():
         if not thisDescription:
             print("vid %i failed. skipping"%count)
             continue
-        titles, timeStamps, goalScorers, primaryAssists, highlightGoals = GetGoals(thisDescription, thisTitle)
+        titles, timeStamps,elapsedTime, goalScorers, primaryAssists, highlightGoals = GetGoals(thisDescription, thisTitle)
         with open('goals.csv', 'a', encoding='UTF8', newline='') as f:
             writer = csv.writer(f)
             for i in range(len(titles)):
-                data = [titles[i], timeStamps[i], goalScorers[i],primaryAssists[i], highlightGoals[i]]
+                data = [titles[i], timeStamps[i], elapsedTime[i], goalScorers[i],primaryAssists[i], highlightGoals[i]]
                 writer.writerow(data)
 
-        allTitles.append(titles)
-        allTimeStamps.append(timeStamps)
-        allGoalScorers.append(goalScorers)
-        allPrimaryAssists.append(primaryAssists)
-        allHighlightGoals.append(highlightGoals)
+        # allTitles.append(titles)
+        # allTimeStamps.append(timeStamps)
+        # allGoalScorers.append(goalScorers)
+        # allPrimaryAssists.append(primaryAssists)
+        # allHighlightGoals.append(highlightGoals)
         # print(test)
         
         # splitLines = test.split("\n")
@@ -209,8 +218,4 @@ def main():
 
 
 if __name__ == '__main__':
-
-    stringTest = "1:00:50 lol eddie !!!!"
-    
-    # print(z.groups)
     main()
