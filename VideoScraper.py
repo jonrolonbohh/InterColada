@@ -104,9 +104,7 @@ def GetGoals(description, title, vid):
         try:
             firstStr = re.match(r'(?P<time>[[\d{2}]?:?\d{2}:\d{2})( )(?P<comment>[\s\S]+)',line)
             timeStamp = firstStr.group("time")
-            # print(timeStamp)
             comment = firstStr.group("comment")
-            # print(comment)
 
         except:
             print("%s not valid line"%line)
@@ -166,7 +164,7 @@ def GetGoals(description, title, vid):
 def calcElapsedTime(timeStampString):
     # Calculate Elapsed time for stamina stats
     time = timeStampString.split(":")
-    
+
     if len(time) == 3:
         hours = float(time[0])
         minutes = float(time[1])
