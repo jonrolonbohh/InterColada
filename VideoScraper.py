@@ -33,6 +33,26 @@ def GetAllVideoLinksChannel(channel_id):
             break
     return video_links
 
+# Function to get description using YouTube Data API
+def get_description_from_api(video_id):
+    api_key = "AIzaSyCADRh61QrKZUoII2GUzZ_89QnVTYa_izs"
+    url = f'https://www.googleapis.com/youtube/v3/videos?id={video_id}&key={api_key}&part=snippet'
+    for attempt in range(3):  # Retry up to 3 times
+        try:
+            response = requests.get(url, timeout=30)
+            break  # Success, exit the loop
+        except requests.exceptions.Timeout:
+            print(f"Attempt {attempt + 1} timed out, retrying...")
+        except requests.exceptions.ConnectionError:
+            print(f"Connection error on attempt {attempt + 1}, retrying...")
+
+    data = response.json()
+
+    # Check if the response contains the necessary information
+    if 'items' in data and len(data['items']) > 0:
+        return data['items'][0]['snippet']['description']
+    else:
+        return ""
 
 
 def GetDescriptionAndTitle(url):
@@ -51,15 +71,29 @@ def GetDescriptionAndTitle(url):
         title = ""
         return title, description
 
+    if "ksp" in title.lower():
+        print("found a ksp video: %s"%title.lower())
+        title = ""
+        return title, description
+
     while it < numTries:
         it += 1
-        try:
-            pattern = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
-            description = pattern.findall(str(soup))[0].replace('\\n','\n')
+        # try:
+        pattern = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
+
+        description_search = pattern.findall(str(soup))
+
+        if not description_search:
+            print("No description found. Attempting to get from API")
+            # Extract video ID from URL
+            video_id = url.split("watch?v=")[-1]
+            description = get_description_from_api(video_id)
+        else:
+            description = description_search[0].replace('\\n', '\n')
             
-        except(IndexError):
-            print("IndexError attempt on %i"% it)
-            continue
+        # except(IndexError):
+        #     print("IndexError attempt on %i"% it)
+        #     continue
             # it+=1
         if description:
             break
